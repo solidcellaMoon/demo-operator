@@ -56,7 +56,6 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	cr := &demoappv1.Demo{}        // CR 객체 정의
 	svc := &corev1.Service{}       // svc 객체 정의
 	dply := &appsv1.Deployment{}   // deploy 객체 정의
-	size := cr.Spec.Size           // cr.Spec.Size는 deploy.Spec.Replicas 값으로 들어감.
 
 	// 클러스터에서 해당 CR이 있는지 확인합니다.
 	err := r.Client.Get(ctx, req.NamespacedName, cr)
@@ -71,6 +70,8 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Error(err, "Failed to get CR")
 		return ctrl.Result{}, err // 기타 에러 처리
 	}
+
+	size := cr.Spec.Size // deploy.Spec.Replicas 값으로 들어감.
 
 	// 클러스터에서 cr용 service가 있는지 확인합니다.
 	err = r.Client.Get(ctx, types.NamespacedName{
