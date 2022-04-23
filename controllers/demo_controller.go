@@ -61,9 +61,7 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// TODO(user): your logic here
 
-	// logger 사용법
-	logger.WithName("Resource Name")
-	logger.WithValues("Resource NameSpace: ", req.Namespace)
+	// logger 예시
 	logger.Info("Resource Changed")
 
 	// CR로 정의한 객체를 가져오기 위한 struct의 ref를 받아옵니다.
