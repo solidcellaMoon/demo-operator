@@ -1,0 +1,6 @@
+domain: my.domain
+layout:
+- go.kubebuilder.io/v3
+projectName: demo-operator
+repo: demo-operator
+version: "3"
