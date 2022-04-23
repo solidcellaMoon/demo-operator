@@ -199,8 +199,8 @@ func (r *DemoReconciler) createService(d *demoappv1.Demo) *corev1.Service {
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
-					Port:       8080,
-					TargetPort: intstr.IntOrString{IntVal: 8080},
+					Port:       80,
+					TargetPort: intstr.IntOrString{IntVal: 80},
 				},
 			},
 		},
@@ -240,7 +240,7 @@ func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment 
 						Name:  "nginx-app",
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 8080,
+								ContainerPort: 80,
 								Protocol:      corev1.ProtocolTCP,
 							},
 						},
