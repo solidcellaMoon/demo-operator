@@ -237,7 +237,7 @@ func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Image: "nginx:latest",
-						Name:  "echoservice",
+						Name:  "nginx-app",
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 8080,
@@ -257,7 +257,7 @@ func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment 
 // pod의 Label은 pod를 인식하는 데이터입니다.
 // 이것을 메소드로 모듈화하여 정적자원처럼 사용합니다.
 func GetLabelForCR(name string) map[string]string {
-	return map[string]string{"app": "echoservice"}
+	return map[string]string{"app": "nginx-app"}
 }
 
 // SetupWithManager sets up the controller with the Manager.
