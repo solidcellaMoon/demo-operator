@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"          // k8s apps
 	corev1 "k8s.io/api/core/v1"          // k8s core
 	"k8s.io/apimachinery/pkg/api/errors" // 추가 패키지
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,6 +154,49 @@ func (r *DemoReconciler) createService(d *demoappv1.Demo) *corev1.Service {
 	// cr이 삭제됐을때 svc가 남아있는걸 막기 위해 ref에 추가
 	ctrl.SetControllerReference(d, newSvc, r.Scheme)
 	return newSvc
+}
+
+// !! CR.Spec.Size 정의 내용을 사용하는 곳입니다 !!
+// Deployment를 생성하고 컨트롤러에 등록해 cr이 삭제되면 함께 삭제되도록 합니다.
+// yaml을 golang으로 하드코딩한 형태입니다...
+func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment {
+
+	label := GetLabelForCR(d.Name)
+	size := d.Spec.Size
+
+	// Deployment 정의
+	newDply := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      d.Name,
+			Namespace: d.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &size,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: label,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: label,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Image: "nginx:latest",
+						Name:  "echoservice",
+						Ports: []corev1.ContainerPort{
+							{
+								ContainerPort: 8080,
+								Protocol:      corev1.ProtocolTCP,
+							},
+						},
+					}},
+				},
+			},
+		},
+	} // 정의 끝
+
+	ctrl.SetControllerReference(d, newDply, r.Scheme)
+	return newDply
 }
 
 // pod의 Label은 pod를 인식하는 데이터입니다.
