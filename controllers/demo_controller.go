@@ -19,8 +19,10 @@ package controllers
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"          // k8s core
 	"k8s.io/apimachinery/pkg/api/errors" // 추가 패키지
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -79,6 +81,15 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Error(err, "GET CR Error occurred")
 		return ctrl.Result{}, err
 	}
+
+	// service 객체를 만들어줍니다.
+	svc := &corev1.Service{}
+
+	// 서버에서 cr로 만들어진 service를 받아옵니다.
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name:      cr.Name,
+		Namespace: cr.Namespace,
+	}, svc)
 
 	return ctrl.Result{}, nil
 }
