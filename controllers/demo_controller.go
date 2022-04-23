@@ -150,6 +150,32 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
+	// deploy 생성할 때 cr.Spec.Size로 replicaSet 생성을 해주었음.
+	// cr.Spec.Size가 변경되어 apply된 경우 해당 로직으로 제어함.
+	size := cr.Spec.Size
+
+	// deploy 정의할 때 사용한 replicas와 cr.Spec.Size 값이 다른 경우
+	if *dply.Spec.Replicas != size {
+
+		// replicas를 변경된 값으로 맞춰줌.
+		dply.Spec.Replicas = &size
+
+		// custom controller를 만들더라도 기존 k8s controll loop는 정상적으로 돌아갑니다...
+		// replicaset만 변경해서 pod 수를 제어합니다.
+		logger.Info("changed replicas Size", "ReplicaSet.namespace", cr.Namespace, "Size", size)
+
+		err = r.Client.Update(ctx, dply)
+
+		if err != nil {
+			logger.Error(err, "Error in Updating ReplicaSet", "Deploy.Namespace", dply.Namespace,
+				"Deploy.Name", dply.Name)
+			return ctrl.Result{}, err
+		}
+
+		// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
+		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+	}
+
 	return ctrl.Result{}, nil
 }
 
