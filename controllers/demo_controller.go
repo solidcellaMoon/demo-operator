@@ -120,6 +120,35 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// 2. Deployment 생성
+	dply := &appsv1.Deployment{}
+
+	err = r.Client.Get(ctx, types.NamespacedName{
+		Name:      cr.Name,
+		Namespace: cr.Namespace,
+	}, dply)
+
+	// deploy 받아왔더니 변경사항이 존재합니다...
+	if err != nil {
+		// deploy가 found 되지 않은 경우 생성합니다.
+		if errors.IsNotFound(err) {
+			// deploy 생성!!
+			newDply := r.createDeployment(cr)
+			err = r.Create(ctx, newDply)
+
+			if err != nil {
+				logger.Info("failed to create Service", "deploy.namespace", newDply.Namespace, "deploy.name", newDply.Name)
+				return ctrl.Result{}, err
+			}
+
+			logger.Info("Service Created", "deploy.namespace", newDply.Namespace, "deploy.name", newDply.Name)
+
+			// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
+			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+		}
+
+		logger.Error(err, "Failed to Get Deployment")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
