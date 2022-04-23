@@ -1,0 +1,6 @@
+apiVersion: demoapp.my.domain/v1
+kind: Demo
+metadata:
+  name: demo-sample
+spec:
+  size: 2
