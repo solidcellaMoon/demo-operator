@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"          // k8s core
 	"k8s.io/apimachinery/pkg/api/errors" // 추가 패키지
@@ -84,7 +85,7 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// service 객체를 만들어줍니다.
+	// 1. service 객체를 만들어줍니다.
 	svc := &corev1.Service{}
 
 	// 서버에서 cr로 만들어진 service를 받아옵니다.
@@ -99,9 +100,25 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 		if errors.IsNotFound(err) {
 			// 서비스 생성!!
-			// newSvc := r.Client.Create()
+			newSvc := r.createService(cr)
+			err = r.Create(ctx, newSvc)
+
+			if err != nil {
+				logger.Info("failed to create Service", "svc.namespace", newSvc.Namespace, "svc.name", newSvc.Name)
+				return ctrl.Result{}, err
+			}
+
+			logger.Info("Service Created", "svc.namespace", newSvc.Namespace, "svc.name", newSvc.Name)
+
+			// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
+			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
+
+		logger.Error(err, "Failed to Get Service")
+		return ctrl.Result{}, err
 	}
+
+	// 2. Deployment 생성
 
 	return ctrl.Result{}, nil
 }
