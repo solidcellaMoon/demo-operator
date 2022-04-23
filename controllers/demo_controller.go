@@ -38,20 +38,6 @@ type DemoReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Demo object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
-
 func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
@@ -185,7 +171,5 @@ func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// For에 감시할 CR을 설정합니다.
 	// Owns는 서브로 감시할 대상입니다. (서브 감시 대상이 삭제되면 reconcile 되도록)
 	// 서브로 감시할 대상에 추가된 service와 deploy는
-	// 추후 사용자가 임의로 삭제하면 다시 복구됩니다~!
-	// 현재 cr이 삭제됐을 때 svc와 dep가 함께 삭제되지는 않습니다.
-	// 해당 로직이 필요한 경우, 컨트롤러 ref에 추가합니다.
+	// 추후 사용자가 임의로 삭제하면 다시 복구됩니다.
 }
