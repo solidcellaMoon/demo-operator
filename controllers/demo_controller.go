@@ -20,13 +20,11 @@ import (
 	"context"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"          // k8s apps
-	corev1 "k8s.io/api/core/v1"          // k8s core
-	"k8s.io/apimachinery/pkg/api/errors" // 추가 패키지
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -54,14 +52,13 @@ type DemoReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 
-var logger = log.Log
-
 func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
 
 	// logger 예시
+	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Resource Changed")
 
 	// CR로 정의한 객체를 가져오기 위한 struct의 ref를 받아옵니다.
@@ -138,7 +135,7 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				return ctrl.Result{}, err
 			}
 
-			logger.Info("Service Created", "deploy.namespace", newDply.Namespace, "deploy.name", newDply.Name)
+			logger.Info("Deployment Created", "deploy.namespace", newDply.Namespace, "deploy.name", newDply.Name)
 
 			// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
@@ -175,87 +172,6 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// Service를 생성하고, 컨트롤러에 등록해 cr이 삭제된 경우 함께 삭제되도록 합니다.
-// yaml을 하드코딩하였음.
-func (r *DemoReconciler) createService(d *demoappv1.Demo) *corev1.Service {
-
-	// Label은 여러 곳에서 사용하는 pod의 정보가 담긴 데이터입니다.
-	// 메소드로 모듈화시켜 정적자원처럼 사용하려고 합니다.
-	label := GetLabelForCR(d.Name)
-
-	// service struct는 metadata, spec 등을 구현할 수 있도록 정의
-	newSvc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.Name,
-			Namespace: d.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			Type:     corev1.ServiceTypeClusterIP, // cluster IP
-			Selector: label,
-			Ports: []corev1.ServicePort{
-				{
-					Protocol:   corev1.ProtocolTCP,
-					Port:       80,
-					TargetPort: intstr.IntOrString{IntVal: 80},
-				},
-			},
-		},
-	} // svc 정의 끝
-
-	// cr이 삭제됐을때 svc가 남아있는걸 막기 위해 ref에 추가
-	ctrl.SetControllerReference(d, newSvc, r.Scheme)
-	return newSvc
-}
-
-// !! CR.Spec.Size 정의 내용을 사용하는 곳입니다 !!
-// Deployment를 생성하고 컨트롤러에 등록해 cr이 삭제되면 함께 삭제되도록 합니다.
-// yaml을 golang으로 하드코딩한 형태입니다...
-func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment {
-
-	label := GetLabelForCR(d.Name)
-	size := d.Spec.Size
-
-	// Deployment 정의
-	newDply := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.Name,
-			Namespace: d.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &size,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: label,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: label,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{
-						Image: "nginx:latest",
-						Name:  "nginx-app",
-						Ports: []corev1.ContainerPort{
-							{
-								ContainerPort: 80,
-								Protocol:      corev1.ProtocolTCP,
-							},
-						},
-					}},
-				},
-			},
-		},
-	} // 정의 끝
-
-	ctrl.SetControllerReference(d, newDply, r.Scheme)
-	return newDply
-}
-
-// pod의 Label은 pod를 인식하는 데이터입니다.
-// 이것을 메소드로 모듈화하여 정적자원처럼 사용합니다.
-func GetLabelForCR(name string) map[string]string {
-	return map[string]string{"app": "nginx-app"}
 }
 
 // SetupWithManager sets up the controller with the Manager.
