@@ -21,8 +21,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"          // k8s core
 	"k8s.io/apimachinery/pkg/api/errors" // 추가 패키지
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -91,7 +93,55 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Namespace: cr.Namespace,
 	}, svc)
 
+	// service를 받아왔더니 변경사항이 존재합니다.
+	if err != nil {
+		// 서비스가 found 되지 않은 경우 생성합니다.
+
+		if errors.IsNotFound(err) {
+			// 서비스 생성!!
+			// newSvc := r.Client.Create()
+		}
+	}
+
 	return ctrl.Result{}, nil
+}
+
+// Service를 생성하고, 컨트롤러에 등록해 cr이 삭제된 경우 함께 삭제되도록 합니다.
+// yaml을 하드코딩하였음.
+func (r *DemoReconciler) createService(d *demoappv1.Demo) *corev1.Service {
+
+	// Label은 여러 곳에서 사용하는 pod의 정보가 담긴 데이터입니다.
+	// 메소드로 모듈화시켜 정적자원처럼 사용하려고 합니다.
+	label := GetLabelForCR(d.Name)
+
+	// service struct는 metadata, spec 등을 구현할 수 있도록 정의
+	newSvc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      d.Name,
+			Namespace: d.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     corev1.ServiceTypeClusterIP, // cluster IP
+			Selector: label,
+			Ports: []corev1.ServicePort{
+				{
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8080,
+					TargetPort: intstr.IntOrString{IntVal: 8080},
+				},
+			},
+		},
+	} // svc 정의 끝
+
+	// cr이 삭제됐을때 svc가 남아있는걸 막기 위해 ref에 추가
+	ctrl.SetControllerReference(d, newSvc, r.Scheme)
+	return newSvc
+}
+
+// pod의 Label은 pod를 인식하는 데이터입니다.
+// 이것을 메소드로 모듈화하여 정적자원처럼 사용합니다.
+func GetLabelForCR(name string) map[string]string {
+	return map[string]string{"app": "echoservice"}
 }
 
 // SetupWithManager sets up the controller with the Manager.
