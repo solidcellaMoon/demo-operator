@@ -43,26 +43,24 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// logger 예시
 	logger := ctrl.LoggerFrom(ctx)
-	// logger.Info("Resource Changed")
 
-	// CR로 정의한 객체를 가져오기 위한 struct의 ref를 받아옵니다.
+	// CR 객체 정의
 	cr := &demoappv1.Demo{}
 
-	// 데이터를 서버에서 받아와 cr에 넣어줍니다.
+	// 클러스터에서 해당 CR이 있는지 확인합니다.
 	err := r.Client.Get(ctx, req.NamespacedName, cr)
 
-	// cr에 변경이 존재하거나 err가 발생한 경우 진행되는 로직입니다.
-	// 변경사항이 존재한다는 것으로 생각해야 합니다.
+	// Get CR에 에러가 있는 경우
 	if err != nil {
 
-		// 변경사항인 cr이 k8s에 존재하는지 확인합니다.
+		// 변경사항인 cr이 k8s에 존재하지 않는 경우
 		if errors.IsNotFound(err) {
-			logger.Info("Deleted - Demo CR")
+			logger.Info("CR is Deleted")
 			return ctrl.Result{}, nil
 		}
 
-		// GET 함수 처리
-		logger.Error(err, "GET CR Error occurred")
+		// 기타 에러 처리
+		logger.Error(err, "Failed to get CR")
 		return ctrl.Result{}, err
 	}
 
@@ -85,22 +83,23 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			newSvc := r.createService(cr)
 			err = r.Create(ctx, newSvc)
 
+			// 생성중 에러가 발생하면 이벤트 큐에 다시 넣음.
+			// 이벤트 큐 - return에 err 포함하거나, ctrl.Result에 Requeue 옵션 포함
 			if err != nil {
 				logger.Info("failed to create Service", "svc.namespace", newSvc.Namespace, "svc.name", newSvc.Name)
 				return ctrl.Result{}, err
 			}
 
 			logger.Info("Service Created", "svc.namespace", newSvc.Namespace, "svc.name", newSvc.Name)
-
-			// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
-			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+			return ctrl.Result{}, nil
 		}
 
+		// 기타 에러 처리
 		logger.Error(err, "Failed to Get Service")
 		return ctrl.Result{}, err
 	}
 
-	// 2. Deployment 생성 과정 ---
+	// 2. Deployment 생성 과정 --- (코드 구조는 svc와 동일)
 
 	// deploy 객체 정의
 	dply := &appsv1.Deployment{}
@@ -125,8 +124,6 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			}
 
 			logger.Info("Deployment Created", "deploy.namespace", newDply.Namespace, "deploy.name", newDply.Name)
-
-			// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
 			return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 		}
 
@@ -154,7 +151,6 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return ctrl.Result{}, err
 		}
 
-		// Requeue를 설정해주면 이벤트큐에 다시 올라가 다시 로직이 진행됩니다...
 		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 	}
 
