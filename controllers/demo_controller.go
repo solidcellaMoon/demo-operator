@@ -41,11 +41,9 @@ type DemoReconciler struct {
 func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
-
 	// logger 예시
 	logger := ctrl.LoggerFrom(ctx)
-	logger.Info("Resource Changed")
+	// logger.Info("Resource Changed")
 
 	// CR로 정의한 객체를 가져오기 위한 struct의 ref를 받아옵니다.
 	cr := &demoappv1.Demo{}
@@ -56,6 +54,7 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// cr에 변경이 존재하거나 err가 발생한 경우 진행되는 로직입니다.
 	// 변경사항이 존재한다는 것으로 생각해야 합니다.
 	if err != nil {
+
 		// 변경사항인 cr이 k8s에 존재하는지 확인합니다.
 		if errors.IsNotFound(err) {
 			logger.Info("Deleted - Demo CR")
@@ -67,21 +66,22 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// 1. service 객체를 만들어줍니다.
+	// 1. service 생성 과정 ---
+
+	// svc 객체 정의
 	svc := &corev1.Service{}
 
-	// 서버에서 cr로 만들어진 service를 받아옵니다.
+	// 클러스터에서 cr용 service가 있는지 확인합니다.
 	err = r.Client.Get(ctx, types.NamespacedName{
 		Name:      cr.Name,
 		Namespace: cr.Namespace,
 	}, svc)
 
-	// service를 받아왔더니 변경사항이 존재합니다.
+	// Get service에 에러가 있는 경우
 	if err != nil {
-		// 서비스가 found 되지 않은 경우 생성합니다.
 
+		// 해당 service가 클러스터에 없는 경우 생성합니다.
 		if errors.IsNotFound(err) {
-			// 서비스 생성!!
 			newSvc := r.createService(cr)
 			err = r.Create(ctx, newSvc)
 
@@ -100,19 +100,22 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// 2. Deployment 생성
+	// 2. Deployment 생성 과정 ---
+
+	// deploy 객체 정의
 	dply := &appsv1.Deployment{}
 
+	// 클러스터에서 cr용 deploy가 있는지 확인합니다.
 	err = r.Client.Get(ctx, types.NamespacedName{
 		Name:      cr.Name,
 		Namespace: cr.Namespace,
 	}, dply)
 
-	// deploy 받아왔더니 변경사항이 존재합니다...
+	// Get deploy에 에러가 있는 경우
 	if err != nil {
-		// deploy가 found 되지 않은 경우 생성합니다.
+
+		// 해당 deploy가 클러스터에 없는 경우 생성합니다.
 		if errors.IsNotFound(err) {
-			// deploy 생성!!
 			newDply := r.createDeployment(cr)
 			err = r.Create(ctx, newDply)
 
@@ -131,25 +134,23 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// deploy 생성할 때 cr.Spec.Size로 replicaSet 생성을 해주었음.
-	// cr.Spec.Size가 변경되어 apply된 경우 해당 로직으로 제어함.
+	// 3. cr.Spec.Size 값 변경 반영 과정 ---
+
 	size := cr.Spec.Size
 
-	// deploy 정의할 때 사용한 replicas와 cr.Spec.Size 값이 다른 경우
+	// deploy 정의할 때 사용한 replicas 값과 cr.Spec.Size 값이 다른 경우
 	if *dply.Spec.Replicas != size {
 
 		// replicas를 변경된 값으로 맞춰줌.
 		dply.Spec.Replicas = &size
 
-		// custom controller를 만들더라도 기존 k8s controll loop는 정상적으로 돌아갑니다...
-		// replicaset만 변경해서 pod 수를 제어합니다.
-		logger.Info("changed replicas Size", "ReplicaSet.namespace", cr.Namespace, "Size", size)
-
+		// deploy에 replicas 값 변경을 반영합니다.
+		logger.Info("changed replicas Size", "deploy.namespace", dply.Namespace, "deploy.Name", dply.Name, "Size", size)
 		err = r.Client.Update(ctx, dply)
 
 		if err != nil {
-			logger.Error(err, "Error in Updating ReplicaSet", "Deploy.Namespace", dply.Namespace,
-				"Deploy.Name", dply.Name)
+			logger.Error(err, "Error in Updating ReplicaSet", "deploy.Namespace", dply.Namespace,
+				"deploy.Name", dply.Name)
 			return ctrl.Result{}, err
 		}
 
@@ -163,13 +164,11 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 // SetupWithManager sets up the controller with the Manager.
 func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&demoappv1.Demo{}).
-		Owns(&corev1.Service{}).
+		For(&demoappv1.Demo{}).  // For에 감시할 CR을 설정합니다.
+		Owns(&corev1.Service{}). // Owns는 서브로 감시할 대상입니다. (서브 감시 대상이 삭제되면 reconcile 되도록)
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 
-	// For에 감시할 CR을 설정합니다.
-	// Owns는 서브로 감시할 대상입니다. (서브 감시 대상이 삭제되면 reconcile 되도록)
-	// 서브로 감시할 대상에 추가된 service와 deploy는
-	// 추후 사용자가 임의로 삭제하면 다시 복구됩니다.
+	// 여기서 서브로 감시할 대상에 추가된 service와 deploy는
+	// 추후 임의로 삭제하면 다시 복구됩니다.
 }
