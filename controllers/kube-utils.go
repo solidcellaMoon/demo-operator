@@ -15,6 +15,15 @@ func getLabelForCR(crName string) map[string]string {
 	return map[string]string{"app": crName}
 }
 
+// pod Name List
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, p := range pods {
+		podNames = append(podNames, p.Name)
+	}
+	return podNames
+}
+
 // Service를 생성하고, 컨트롤러에 등록해 cr이 삭제된 경우 함께 삭제되도록 합니다.
 func (r *DemoReconciler) createService(d *demoappv1.Demo) *corev1.Service {
 
@@ -84,13 +93,4 @@ func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment 
 	// cr이 삭제됐을때 deploy가 남아있는걸 막기 위해 ref에 추가
 	ctrl.SetControllerReference(d, newDply, r.Scheme)
 	return newDply
-}
-
-// pod Name List
-func getPodNames(pods []corev1.Pod) []string {
-	var podNames []string
-	for _, p := range pods {
-		podNames = append(podNames, p.Name)
-	}
-	return podNames
 }

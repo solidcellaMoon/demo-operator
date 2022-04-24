@@ -46,6 +46,10 @@ type DemoStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// 추가
+// +kubebuilder:printcolumn:name="size",type=string,JSONPath=`.spec.size`
+// +kubebuilder:printcolumn:name="created at",type=string,JSONPath=`.metadata.creationTimestamp`
+// 이건 길어서 제외 - kubebuilder:printcolumn:name="node",type=string,JSONPath=`.status.nodes`
 
 // Demo is the Schema for the demoes API
 type Demo struct {
