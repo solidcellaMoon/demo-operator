@@ -14,3 +14,7 @@ images:
 - name: controller
   newName: ghcr.io/solidcellamoon/demo-controller
   newTag: latest
+
+replicas:
+  - count: 2
+    name: "controller-manager"
