@@ -67,14 +67,14 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 
-	flag.DurationVar(&leaderElectionLeaseDuration, "leader-elect-lease-duration", 15*time.Second,
-		"Interval at which non-leader candidates will wait to force acquire leadership (duration string)")
+	// flag.DurationVar(&leaderElectionLeaseDuration, "leader-elect-lease-duration", 15*time.Second,
+	// 	"Interval at which non-leader candidates will wait to force acquire leadership (duration string)")
 
-	flag.DurationVar(&leaderElectionRenewDeadline, "leader-elect-renew-deadline", 10*time.Second,
-		"Duration that the leading controller manager will retry refreshing leadership before giving up (duration string)")
+	// flag.DurationVar(&leaderElectionRenewDeadline, "leader-elect-renew-deadline", 10*time.Second,
+	// 	"Duration that the leading controller manager will retry refreshing leadership before giving up (duration string)")
 
-	flag.DurationVar(&leaderElectionRetryPeriod, "leader-elect-retry-period", 2*time.Second,
-		"Duration the LeaderElector clients should wait between tries of actions (duration string)")
+	// flag.DurationVar(&leaderElectionRetryPeriod, "leader-elect-retry-period", 2*time.Second,
+	// 	"Duration the LeaderElector clients should wait between tries of actions (duration string)")
 
 	opts := zap.Options{
 		Development: true,
@@ -91,9 +91,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "a3788769.my.domain",
-		LeaseDuration:          &leaderElectionLeaseDuration,
-		RenewDeadline:          &leaderElectionRenewDeadline,
-		RetryPeriod:            &leaderElectionRetryPeriod,
+		// LeaseDuration:          &leaderElectionLeaseDuration,
+		// RenewDeadline:          &leaderElectionRenewDeadline,
+		// RetryPeriod:            &leaderElectionRetryPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
