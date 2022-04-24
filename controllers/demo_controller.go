@@ -57,9 +57,8 @@ func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 
-	logger := ctrl.LoggerFrom(ctx) // logger 정의
+	logger := log.FromContext(ctx) // logger 정의
 	cr := &demoappv1.Demo{}        // CR 객체 정의
 	svc := &corev1.Service{}       // svc 객체 정의
 	dply := &appsv1.Deployment{}   // deploy 객체 정의
