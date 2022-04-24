@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +38,14 @@ type DemoReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// kubebuilder annotation 다시 추가
+//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;delete
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -50,9 +59,8 @@ func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 
-	logger := ctrl.LoggerFrom(ctx) // logger 정의
+	logger := log.FromContext(ctx) // logger 정의
 	cr := &demoappv1.Demo{}        // CR 객체 정의
 	svc := &corev1.Service{}       // svc 객체 정의
 	dply := &appsv1.Deployment{}   // deploy 객체 정의
@@ -140,6 +148,33 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 
 		return ctrl.Result{}, nil
+	}
+
+	// status.Nodes
+	podList := &corev1.PodList{}
+	label := getLabelForCR(cr.Name)
+	listOps := []client.ListOption{
+		client.InNamespace(req.NamespacedName.Namespace),
+		client.MatchingLabels(label),
+	}
+
+	err = r.Client.List(ctx, podList, listOps...)
+	if err != nil {
+		logger.Error(err, "Failed to list Pods.", "demo.Namespace", cr.Namespace, "demo.Name", cr.Name)
+		return ctrl.Result{}, err
+	}
+
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
+		logger.Info("Update pod list in demo", "podNames", podNames)
+		cr.Status.Nodes = podNames
+		err := r.Client.Status().Update(ctx, cr)
+		if err != nil {
+			logger.Error(err, "Failed to update Demo Status.")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
