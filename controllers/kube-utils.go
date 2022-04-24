@@ -85,3 +85,12 @@ func (r *DemoReconciler) createDeployment(d *demoappv1.Demo) *appsv1.Deployment 
 	ctrl.SetControllerReference(d, newDply, r.Scheme)
 	return newDply
 }
+
+// pod Name List
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, p := range pods {
+		podNames = append(podNames, p.Name)
+	}
+	return podNames
+}

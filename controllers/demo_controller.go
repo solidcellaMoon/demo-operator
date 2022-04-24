@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -146,6 +147,33 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 
 		return ctrl.Result{}, nil
+	}
+
+	// status.Nodes
+	podList := &corev1.PodList{}
+	label := getLabelForCR(cr.Name)
+	listOps := []client.ListOption{
+		client.InNamespace(req.NamespacedName.Namespace),
+		client.MatchingLabels(label),
+	}
+
+	err = r.Client.List(ctx, podList, listOps...)
+	if err != nil {
+		logger.Error(err, "Failed to list Pods.", "demo.Namespace", cr.Namespace, "demo.Name", cr.Name)
+		return ctrl.Result{}, err
+	}
+
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
+		logger.Info("Update pod list in demo", "podNames", podNames)
+		cr.Status.Nodes = podNames
+		err := r.Client.Status().Update(ctx, cr)
+		if err != nil {
+			logger.Error(err, "Failed to update Demo Status.")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
