@@ -42,8 +42,7 @@ type DemoReconciler struct {
 //+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
-//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;delete
-//+kubebuilder:rbac:groups="",resources=pods,verbs=list;watch
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DemoReconciler) SetupWithManager(mgr ctrl.Manager) error {
