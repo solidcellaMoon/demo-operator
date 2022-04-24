@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -42,12 +41,12 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// flages
-	metricsAddr                 string
-	enableLeaderElection        bool
-	leaderElectionLeaseDuration time.Duration
-	leaderElectionRenewDeadline time.Duration
-	leaderElectionRetryPeriod   time.Duration
-	probeAddr                   string
+	metricsAddr          string
+	enableLeaderElection bool
+	// leaderElectionLeaseDuration time.Duration
+	// leaderElectionRenewDeadline time.Duration
+	// leaderElectionRetryPeriod   time.Duration
+	probeAddr string
 )
 
 func init() {
