@@ -16,7 +16,14 @@ spec:
     singular: demo
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.size
+      name: size
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: created at
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Demo is the Schema for the demoes API
