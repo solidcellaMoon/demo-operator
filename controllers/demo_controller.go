@@ -38,10 +38,10 @@ type DemoReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// kubebuilder annotation 다시 추가
 //+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=demoapp.my.domain,resources=demoes/finalizers,verbs=update
+// 추가
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;delete
