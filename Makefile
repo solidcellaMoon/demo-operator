@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= demo-controller:latest
+IMG ?= ghcr.io/solidcellamoon/demo-controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
 
@@ -71,11 +71,11 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ghcr.io/solidcellamoon/${IMG} .
+	docker build -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	docker push ghcr.io/solidcellamoon/${IMG}
+	docker push ${IMG}
 
 ##@ Deployment
 
