@@ -3,4 +3,4 @@ kind: Demo
 metadata:
   name: demo-sample
 spec:
-  size: 1
+  size: 3

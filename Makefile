@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/solidcellamoon/demo-controller:leader-elect-true
+IMG ?= ghcr.io/solidcellamoon/demo-controller:leader-elect-false
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
 
