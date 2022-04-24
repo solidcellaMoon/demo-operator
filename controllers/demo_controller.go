@@ -170,6 +170,8 @@ func (r *DemoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 		logger.Info("Update pod list in demo", "podNames", podNames)
 		cr.Status.Nodes = podNames
+		// updateOps := []client.UpdateOption{}
+		// err := r.Client.Status().Update(ctx, cr, updateOps...)
 		err := r.Client.Status().Update(ctx, cr)
 		if err != nil {
 			logger.Error(err, "Failed to update Demo Status.")

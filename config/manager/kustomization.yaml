@@ -13,4 +13,8 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/solidcellamoon/demo-controller
-  newTag: latest
+  newTag: leader-elect-true
+
+replicas:
+- count: 2
+  name: controller-manager
